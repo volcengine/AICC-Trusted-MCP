@@ -1,3 +1,10 @@
+__all__ = [
+    "trusted_mcp_client",
+]
+
+import json
+import logging
+import os
 from collections.abc import AsyncGenerator, AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -9,16 +16,24 @@ from typing_extensions import override
 
 import bytedance.jeddak_secure_channel as jsc
 
+from .common import (
+    TRUSTED_HEADER_NAME,
+    extend_trust_capabilities,
+    get_trust_capabilities,
+)
+
+logger = logging.getLogger(__name__)
+
 
 class JscResponse(httpx.Response):
     jsc_response_key: jsc.ResponseKey
 
-    def __init__(self, upstream: httpx.Response, key: jsc.ResponseKey):
+    def __init__(self, original: httpx.Response, key: jsc.ResponseKey):
         super().__init__(
-            status_code=upstream.status_code,
-            headers=upstream.headers,
-            stream=upstream.stream,
-            extensions=upstream.extensions,
+            status_code=original.status_code,
+            headers=original.headers,
+            stream=original.stream,
+            extensions=original.extensions,
         )
         self.jsc_response_key = key
 
@@ -39,36 +54,134 @@ class JscResponse(httpx.Response):
 
 
 class AsyncTrustedTransport(httpx.AsyncHTTPTransport):
-    jsc_client: jsc.Client
+    jsc_client: jsc.Client | None
 
-    def __init__(self, client: jsc.Client) -> None:
+    """
+    None: not yet initialized
+    True: server supports AICC, encrypt following requests
+    False: server does not support AICC
+    """
+    server_support: bool | None
+
+    def __init__(self, client: jsc.Client | None) -> None:
         super().__init__()
         self.jsc_client = client
+        self.server_support = None
 
-    async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
-        # Read full request body and encrypt
-        should_encrypt = True
-        resp_key = None
-        if should_encrypt:
-            content = await request.aread()
-            encrypted, resp_key = self.jsc_client.encrypt_with_response(content)
-            request._content = encrypted.encode()
-            request.stream = httpx.ByteStream(request._content)
-            request.headers["content-length"] = str(len(request._content))
-            request.headers["content-type"] = "application/json"
+    async def _try_handle_initialize_request(
+        self, req: httpx.Request
+    ) -> httpx.Response | None:
+        if not req.headers.get("content-type", "").startswith("application/json"):
+            return
 
-            request.headers["x-jeddak-trusted-mcp"] = "1"
+        try:
+            body = await req.aread()
+            if not body:
+                logger.warning("Someone is sending suspicious content-type")
+                return
 
-        upstream_resp = await super().handle_async_request(request)
+            body_obj = json.loads(body)
+        except Exception:
+            logger.exception("Try handle initialize request")
+            return
 
-        if upstream_resp.headers.get("x-jeddak-trusted-mcp"):
-            assert resp_key is not None
-            return JscResponse(upstream_resp, resp_key)
+        if body_obj.get("method") != "initialize":
+            return
+
+        params = body_obj["params"] = body_obj.get("params", {})
+        extend_trust_capabilities(params)
+
+        logger.info(f"Rewrote initialize request {body_obj}")
+
+        new_body = json.dumps(
+            body_obj, separators=(",", ":"), ensure_ascii=False
+        ).encode()
+        req._content = new_body
+        req.stream = httpx.ByteStream(req._content)
+        req.headers["content-length"] = str(len(req._content))
+
+        resp = await super().handle_async_request(req)
+
+        await self._handle_initialize_response(resp)
+
+        return resp
+
+    async def _handle_initialize_response(self, resp: httpx.Response) -> None:
+        content_type = resp.headers.get("content-type", "")
+
+        try:
+            if content_type.startswith("application/json"):
+                body = await resp.aread()
+                body_obj = json.loads(body)
+
+            elif content_type.startswith("text/event-stream"):
+                body = await resp.aread()
+                for line in body.split(b"\r\n"):
+                    if line.startswith(b"data:"):
+                        data = line.removeprefix(b"data:").removeprefix(b" ")
+                        body_obj = json.loads(data).get("result", {})
+                        break
+                else:
+                    logger.warning("No data in initialize response")
+                    return
+
+            else:
+                logger.warning(f"Cannot handle initialize response {content_type}")
+                return
+
+        except Exception:
+            logger.exception("Try handle initialize response")
+            return
+
+        if trust_capabilities := get_trust_capabilities(body_obj.get("result", {})):
+            logger.info(f"Server supports AICC {trust_capabilities}")
+            self.server_support = True
         else:
-            return upstream_resp
+            logger.info("Server does NOT support AICC")
+            self.server_support = False
+
+    async def _handle_encrypted_request(self, req: httpx.Request) -> httpx.Response:
+        assert self.jsc_client
+
+        # Read full request body and encrypt
+        content = await req.aread()
+        encrypted, resp_key = self.jsc_client.encrypt_with_response(content)
+        req._content = encrypted.encode()
+        req.stream = httpx.ByteStream(req._content)
+        req.headers["content-length"] = str(len(req._content))
+        req.headers["content-type"] = "application/json"
+
+        req.headers[TRUSTED_HEADER_NAME] = "1"
+
+        resp = await super().handle_async_request(req)
+
+        if resp.headers.get(TRUSTED_HEADER_NAME):
+            return JscResponse(resp, resp_key)
+        else:
+            if 200 <= resp.status_code <= 299:
+                logger.warning("Encrypted request but plaintext response")
+            return resp
+
+    @override
+    async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
+        if not self.jsc_client:
+            # Client does not support AICC
+            return await super().handle_async_request(request)
+
+        if self.server_support is None:
+            # Try to intercept initialize request
+            if resp := await self._try_handle_initialize_request(request):
+                return resp
+
+        elif self.server_support:
+            # Already negotiated; encrypt request and decrypt response
+            return await self._handle_encrypted_request(request)
+
+        # Server does not support AICC
+        return await super().handle_async_request(request)
 
 
-def _create_trusted_http_client(jsc_client: jsc.Client) -> McpHttpClientFactory:
+def _create_trusted_http_client(jsc_client: jsc.Client | None) -> McpHttpClientFactory:
     def f(
         headers: dict[str, str] | None = None,
         timeout: httpx.Timeout | None = None,
@@ -87,9 +200,19 @@ def _create_trusted_http_client(jsc_client: jsc.Client) -> McpHttpClientFactory:
 
 @asynccontextmanager
 async def trusted_mcp_client(
-    url: str, jsc_config: jsc.ClientConfig
+    url: str, aicc_config_path: str | os.PathLike = None
 ) -> AsyncGenerator[ClientSession, None]:
-    jsc_client = jsc.Client(jsc_config)
+    jsc_client = None
+    if aicc_config_path:
+        jsc_config = jsc.ClientConfig.from_file(aicc_config_path)
+    else:
+        jsc_config = jsc.ClientConfig.from_dict({"pub_key_path": "./myPublicKey.pem"})
+
+    try:
+
+        jsc_client = jsc.Client(jsc_config)
+    except Exception:
+        logger.exception("Create AICC client")
 
     async with streamablehttp_client(
         url,

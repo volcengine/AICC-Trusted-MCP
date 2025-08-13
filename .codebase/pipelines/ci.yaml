@@ -1,0 +1,25 @@
+name: CI
+trigger:
+  change:
+  push:
+  manual:
+
+jobs:
+  test:
+    name: Test
+    image: python:3.11-slim-bookworm
+    steps:
+      - id: dependencies
+        name: Install dependencies
+        commands:
+          - apt-get update
+          - apt-get install -y gcc
+          - python3.11 -m venv .venv
+          - . .venv/bin/activate
+          - pip install --upgrade pip
+          - pip install '.[test]'
+      - id: unit_test
+        name: Unit tests
+        commands:
+          - . .venv/bin/activate
+          - coverage run -m pytest -v --junitxml=report.xml

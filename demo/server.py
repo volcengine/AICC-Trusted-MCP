@@ -1,12 +1,10 @@
 import asyncio
-
 import uvicorn
 
-import bytedance.jeddak_secure_channel as jsc
 from bytedance.jeddak_trusted_mcp import TrustedMcp
 
-jsc_config = jsc.ServerConfig.from_file("server_config.json")
-weather_mcp = TrustedMcp(name="Weather service", jsc_config=jsc_config)
+
+weather_mcp = TrustedMcp(name="Weather service")
 
 
 @weather_mcp.tool()

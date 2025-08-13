@@ -2,22 +2,23 @@ import asyncio
 import json
 import logging
 import os
-
 import httpx
 import mcp
 
-import bytedance.jeddak_secure_channel as jsc
+from flask import Flask, request, jsonify
 from bytedance.jeddak_trusted_mcp import trusted_mcp_client
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
-MCP_URL = os.environ.get("MCP_URL", "http://127.0.0.1:8000/mcp")
+MCP_URL = os.environ.get("MCP_URL", "**")
 
 LLM_BASE_URL = os.environ.get(
-    "LLM_BASE_URL", "https://ark.cn-beijing.volces.com/api/v3"
+    "LLM_BASE_URL", "**"
 )
-LLM_API_KEY = os.environ["LLM_API_KEY"]
-LLM_MODEL_NAME = os.environ.get("LLM_MODEL_NAME", "doubao-1.5-pro-32k-250115")
+LLM_API_KEY = os.environ.get("LLM_API_KEY", "")
+LLM_MODEL_NAME = os.environ.get("LLM_MODEL_NAME", "**")
+
+app = Flask(__name__)
 
 
 def format_tool_for_llm(tool: mcp.Tool) -> str:
@@ -51,39 +52,6 @@ Arguments:
     return output
 
 
-def get_llm_response(messages: list[dict[str, str]]) -> str:
-    """Get a response from the LLM."""
-    url = LLM_BASE_URL + "/chat/completions"
-
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {LLM_API_KEY}",
-    }
-    payload = {
-        "messages": messages,
-        "model": LLM_MODEL_NAME,
-        "stream": False,
-    }
-
-    try:
-        with httpx.Client() as client:
-            response = client.post(url, headers=headers, json=payload, timeout=5 * 60)
-            response.raise_for_status()
-            data = response.json()
-            return data["choices"][0]["message"]["content"]
-
-    except httpx.RequestError as e:
-        error_message = f"Error getting LLM response: {str(e)}"
-        logging.error(error_message)
-
-        if isinstance(e, httpx.HTTPStatusError):
-            status_code = e.response.status_code
-            logging.error(f"Status code: {status_code}")
-            logging.error(f"Response details: {e.response.text}")
-
-        return f"I encountered an error: {error_message}. Please try again or rephrase your request."
-
-
 async def process_llm_response(
     llm_response: str, mcp_session: mcp.ClientSession
 ) -> str | None:
@@ -113,79 +81,33 @@ async def process_llm_response(
         return error_msg
 
 
-async def run_chatbot(mcp_session: mcp.ClientSession) -> None:
-    """Main chat session handler."""
-    tools = (await mcp_session.list_tools()).tools
+@app.route("/toolcall", methods=["POST"])
+async def toolcall():
+    """
+    API request, receiving JSON format request body, return with LLM's response.
+    """
+    if not request.is_json:
+        return jsonify({"error": "Request must be JSON"}), 400
 
-    tools_description = "\n".join(format_tool_for_llm(tool) for tool in tools)
+    llm_response = request.json.get("response")
+    if not llm_response:
+        return jsonify({"error": "Missing 'response' in request"}), 400
 
-    system_message = (
-        "You are a helpful assistant with access to these tools:\n\n"
-        f"{tools_description}\n"
-        "Choose the appropriate tool based on the user's question. "
-        "If no tool is needed, reply directly.\n\n"
-        "IMPORTANT: When you need to use a tool, you must ONLY respond with "
-        "the exact JSON object format below, nothing else:\n"
-        "{\n"
-        '    "tool": "tool-name",\n'
-        '    "arguments": {\n'
-        '        "argument-name": "value"\n'
-        "    }\n"
-        "}\n\n"
-        "After receiving a tool's result:\n"
-        "1. Transform the raw data into a natural, conversational response\n"
-        "2. Keep responses concise but informative\n"
-        "3. Focus on the most relevant information\n"
-        "4. Use appropriate context from the user's question\n"
-        "5. Avoid simply repeating the raw data\n\n"
-        "Please use only the tools that are explicitly defined above."
-    )
+    try:
+        async with trusted_mcp_client(MCP_URL) as mcp_session:
+            await mcp_session.initialize()
 
-    messages = [{"role": "system", "content": system_message}]
-
-    while True:
-        try:
-            try:
-                user_input = input("You: ").strip()
-            except EOFError:
-                print()
-                break
-            if user_input.lower() in ["quit", "exit"]:
-                break
-
-            messages.append({"role": "user", "content": user_input})
-
-            llm_response = get_llm_response(messages)
-            logging.info("Assistant: %s", llm_response)
-            messages.append({"role": "assistant", "content": llm_response})
-
+            # Process the initial LLM response to execute a tool, if any
             tool_result = await process_llm_response(llm_response, mcp_session)
+            return jsonify({"tool_requrest": llm_response,"tool_response": tool_result})
 
-            if tool_result is not None:
-                messages.append({"role": "system", "content": tool_result})
-
-                final_response = get_llm_response(messages)
-                logging.info("Final response: %s", final_response)
-                messages.append({"role": "assistant", "content": final_response})
-
-        except KeyboardInterrupt:
-            break
-
-
-async def main() -> None:
-    """Initialize and run the chat session."""
-
-    jsc_config = jsc.ClientConfig.from_file("client_config.json")
-
-    async with trusted_mcp_client(MCP_URL, jsc_config) as mcp_session:
-        logging.info("Client initialized")
-
-        await mcp_session.initialize()
-        logging.info("MCP session initialized")
-
-        await run_chatbot(mcp_session)
-        logging.info("Exiting")
+    except Exception as e:
+        import traceback
+        logging.error(f"An error occurred in chat API: {e}")
+        logging.error(traceback.format_exc())
+        return jsonify({"error": str(e)}), 500
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    # run flask server
+    app.run(host="0.0.0.0", port=5001)
