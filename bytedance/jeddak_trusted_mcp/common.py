@@ -1,3 +1,6 @@
+# Copyright (c) 2025 Beijing Volcano Engine Technology Co., Ltd. and/or its affiliates
+# SPDX-License-Identifier: MIT
+
 __all__ = [
     "TRUSTED_HEADER_NAME",
     "extend_trust_capabilities",

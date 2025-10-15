@@ -1,3 +1,6 @@
+# Copyright (c) 2025 Beijing Volcano Engine Technology Co., Ltd. and/or its affiliates
+# SPDX-License-Identifier: MIT
+
 from bytedance.jeddak_secure_channel.crypto import PrivateKey
 
 

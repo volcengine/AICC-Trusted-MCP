@@ -1,3 +1,6 @@
+# Copyright (c) 2025 Beijing Volcano Engine Technology Co., Ltd. and/or its affiliates
+# SPDX-License-Identifier: MIT
+
 """
 数据接收方接口.
 """

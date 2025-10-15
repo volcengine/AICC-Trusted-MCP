@@ -1,3 +1,6 @@
+# Copyright (c) 2025 Beijing Volcano Engine Technology Co., Ltd. and/or its affiliates
+# SPDX-License-Identifier: MIT
+
 """
 Merkle树相关实现，替代pymerkle
 """

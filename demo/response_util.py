@@ -1,3 +1,6 @@
+# Copyright (c) 2025 Beijing Volcano Engine Technology Co., Ltd. and/or its affiliates
+# SPDX-License-Identifier: MIT
+
 from enum import IntEnum
 from flask import jsonify
 from logger import logger
