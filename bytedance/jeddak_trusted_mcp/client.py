@@ -52,6 +52,19 @@ class JscResponse(httpx.Response):
             else:
                 yield line
 
+    @override
+    async def aiter_raw(
+            self, chunk_size: int | None = None
+    ) -> AsyncIterator[bytes]:
+        async for chunk in super().aiter_raw(chunk_size):
+            datas = chunk.decode().split('\r\n')
+            for i in range(len(datas)):
+                if datas[i].startswith("data:"):
+                    data = chunk.removeprefix("data:").removeprefix(" ")
+                    decrypted = self.jsc_response_key.decrypt(data).decode()
+                    datas[i] = "data: " + decrypted
+            yield "\r\n".join(datas).encode()
+
 
 class AsyncTrustedTransport(httpx.AsyncHTTPTransport):
     jsc_client: jsc.Client | None

@@ -3,19 +3,19 @@ Trusted MCP是在Jeddak AICC的基础上实现的可信MCP解决方案，Trusted
 # 主要模块
 AICC-Trusted MCP 分为四个模块，即 AI Agent、机密豆包、MCP Client 和 MCP Server。在用户 query 的 pipeline 里，用户首先向 AI agent 提出 query。AI agent 收到 query 后，会请求机密豆包解析用户 query 中的具体任务请求，并将其转化为结构化的工具调用输入，然后传输给 MCP Client。接下来，MCP Client 依据 Trusted MCP 协议，将密文 arguments 传输给 MCP server，得到对应的密文 results。随后，MCP Client 会解密，并把明文 results 返回给用户。
 # 使用说明：
-##SDK编译
+## SDK编译
 进入AICC 端云互信开源代码，执行编译脚本：
 `sh  build.sh`
 编译产物在dist目录中。
 
-##SDK安装（依赖 Python >= 3.10）。
+## SDK安装（依赖 Python >= 3.10）。
 进入dist目录执行pip命令安装SDK
 ```
 version=0.0.1
 pip install bytedance_jeddak_trusted_mcp-${version}-py3-none-any.whl
 ```
 
-##设置运行时配置
+## 设置运行时配置
 1. 【可选】生成加解密需要的默认公钥和私钥（非AICC部署模式）
    执行如下命令生成 myPrivateKey.pem和myPublicKey.pem
    ```
@@ -43,8 +43,8 @@ pip install bytedance_jeddak_trusted_mcp-${version}-py3-none-any.whl
    "attest_interval": 600
    }
    ```
-##运行demo
-###本地方式运行
+## 运行demo
+### 本地方式运行
    启动MCP server
 ```
    python server.py
@@ -56,9 +56,9 @@ pip install bytedance_jeddak_trusted_mcp-${version}-py3-none-any.whl
    export LLM_API_KEY=*****
    python client.py
  ```
-###本地运行并显示MCP协议交互内容
+### 本地运行并显示MCP协议交互内容
    为了更直观地观察Trusted MCP Client和Server之间的协议交互的内容，例如MCP能力协商阶段交互协议内容以及确认Client和Server之间的通信过程是否加密，可借助socat工具来进行观察，使用步骤如下：
-####socat工具安装
+#### socat工具安装
 以Mac为例
 ```
 brew install socat
@@ -76,7 +76,7 @@ brew install socat
   python client.py
   ```
   在Client和Server之间进行交互过程中，用户可通过观察 socat 窗口，获取 initialize 阶段 JSON-RPC 的具体内容，同时也可以确认在后续的Client和Server通信时启用了加密功能（补充说明Trusted MCP采用的是Jeddak AICC端云互信的加密能力对通信内容进行加密，每次加密的密钥都是随机的，也即相同的query，两次加密的密文并不会相同）。
-####AICC方式运行
+#### AICC方式运行
    我们将server.py也在AICC的环境中进行了部署（服务地址：http://180.184.47.108:8000/mcp），如果发现服务连接不上，请及时联系火山AICC团队排查服务状态。
 1. 准备AICC配置
    火山AK、SK请联系火山AICC团队获取
@@ -93,7 +93,7 @@ brew install socat
    ```
    python aicc_client.py
    ```
-#致谢
+# 致谢
    感谢本项目成员，没有大家的共同努力，不会有这个项目的开源发布。希望本项目能对AI应用的隐私保护，特别是在涉及端云协作的场景下，迈出探索性的一步。
-#license
+# license
    MIT。
