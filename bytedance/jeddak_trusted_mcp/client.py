@@ -63,7 +63,7 @@ class JscResponse(httpx.Response):
             datas = chunk.decode().split('\r\n')
             for i in range(len(datas)):
                 if datas[i].startswith("data:"):
-                    data = chunk.removeprefix("data:").removeprefix(" ")
+                    data = datas[i].removeprefix("data:").removeprefix(" ")
                     decrypted = self.jsc_response_key.decrypt(data).decode()
                     datas[i] = "data: " + decrypted
             yield "\r\n".join(datas).encode()
