@@ -181,6 +181,6 @@ python ./demo/aicc_server.py
 python ./demo/aicc_client.py
 ```
 # 致谢
-   感谢本项目成员，没有大家的共同努力，不会有这个项目的开源发布。希望本项目能对AI应用的隐私保护，特别是在涉及端云协作的场景下，迈出探索性的一步。
+   感谢[火山引擎AICC](https://www.volcengine.com/docs/85010/1408106?lang=zh)项目组成员，倘若没有项目组成员的努力，该项目无法实现开源发布。期望本项目能够在AI智能体隐私保护领域，特别是在涉及用户数据安全的场景中，贡献一份力量。
 # license
    MIT。
