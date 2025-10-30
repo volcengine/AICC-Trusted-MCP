@@ -48,7 +48,7 @@ def server_func(city: str) -> dict:
 from bytedance.jeddak_trusted_mcp import trusted_mcp_client
 
 
-MCP_URL = os.environ.get("MCP_URL", "http://127.0.0.1:8000/mcp")
+MCP_URL = os.environ.get("MCP_URL", "http://***/mcp")
 
 
 async def client_func(mcp_session: mcp.ClientSession) -> None:
