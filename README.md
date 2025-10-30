@@ -48,7 +48,7 @@ def server_func(city: str) -> dict:
 from bytedance.jeddak_trusted_mcp import trusted_mcp_client
 
 
-MCP_URL = os.environ.get("MCP_URL", "http://***/mcp")
+MCP_URL = os.environ.get("MCP_URL", "http://127.0.0.1:8000/mcp")
 
 
 async def client_func(mcp_session: mcp.ClientSession) -> None:
@@ -56,6 +56,17 @@ async def client_func(mcp_session: mcp.ClientSession) -> None:
     tools = (await mcp_session.list_tools()).tools
 
     pass
+    
+async def main() -> None:
+    """Initialize and run the chat session."""
+    async with trusted_mcp_client(MCP_URL) as mcp_session:
+        logging.info("Client initialized")
+
+        await mcp_session.initialize()
+        logging.info("MCP session initialized")
+
+        await client_func(mcp_session)
+        logging.info("Exiting")
     
 
 ```
