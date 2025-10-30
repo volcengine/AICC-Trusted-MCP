@@ -150,7 +150,7 @@ python local_client.py
 ```
 
 ## 3.2 在TEE环境中运行MCP服务
-当Trusted MCP服务部署在TEE环境中时，Client和Server会彼此验证对方的远程证明报告，我们以火山引擎的TEE AI机密计算平台AICC产品为例
+当Trusted MCP服务部署在TEE环境中时，Client和Server会彼此验证对方的远程证明报告，我们以火山引擎的[AICC机密计算平台](https://www.volcengine.com/docs/85010/1408106?lang=zh)为例
 ### 1. 准备AICC配置
 火山AK、SK请联系[火山引擎AICC](https://www.volcengine.com/docs/85010/1408106?lang=zh)获取
 将AK、SK填到Client和Server的配置文件中，参考
