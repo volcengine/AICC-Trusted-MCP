@@ -13,7 +13,7 @@
 Trusted MCP是火山引擎推出的可信MCP，在[标准MCP协议](https://modelcontextprotocol.io/)的基础上扩展核心组件之间的身份证明及验证能力，提供组件之间端到端的通信安全保障，可以解决MCP应用中服务身份不可信、数据被篡改、流量劫持、数据隐私泄露等安全威胁。
 
 <p align="center">
-  <img src="./docs/trusted_mcp.png" width="500">
+  <img src="./docs/trusted-mcp-1.png.jpg" width="500">
 </p>
 
 ## 快速开始
