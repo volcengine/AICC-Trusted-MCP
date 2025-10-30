@@ -27,10 +27,10 @@ pip install bytedance_jeddak_trusted_mcp-${version}-py3-none-any.whl
 import asyncio
 import uvicorn
 
-`from bytedance.jeddak_trusted_mcp import TrustedMcp`
+from bytedance.jeddak_trusted_mcp import TrustedMcp
 
 
-`demo_mcp = TrustedMcp(name="demo")`
+demo_mcp = TrustedMcp(name="demo")
 
 
 @demo_mcp.tool()
@@ -74,7 +74,7 @@ import os
 import httpx
 import mcp
 
-`from bytedance.jeddak_trusted_mcp import trusted_mcp_client`
+from bytedance.jeddak_trusted_mcp import trusted_mcp_client
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
@@ -89,7 +89,7 @@ async def run_chatbot(mcp_session: mcp.ClientSession) -> None:
     
 async def main() -> None:
     """Initialize and run the chat session."""
-    `async with trusted_mcp_client(MCP_URL) as mcp_session:`
+    async with trusted_mcp_client(MCP_URL) as mcp_session:
         logging.info("Client initialized")
 
         await mcp_session.initialize()
