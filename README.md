@@ -24,9 +24,6 @@ pip install bytedance_jeddak_trusted_mcp-${version}-py3-none-any.whl
 ## 2.2 使用SDK接入Trusted MCP
 让MCP服务支持Trusted MCP协议非常简单，仅需要使用TrustedMcp代替FastMCP，并准备TEE相关的配置即可，其余只需要按照MCP的开发指引进行开发即可，如下所示是获取天气的MCP Server的示例：
 ```
-import asyncio
-import uvicorn
-
 from bytedance.jeddak_trusted_mcp import TrustedMcp
 
 
@@ -34,7 +31,7 @@ demo_mcp = TrustedMcp(name="demo")
 
 
 @demo_mcp.tool()
-def get_weather(city: str) -> dict:
+def server_func(city: str) -> dict:
     """Get current weather for a city (e.g. "beijing")."""
     import httpx
 
@@ -44,63 +41,23 @@ def get_weather(city: str) -> dict:
         .get("current_condition")[0]
     )
 
-
-async def main() -> None:
-    import argparse
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--host", type=str, default="0.0.0.0")
-    parser.add_argument("--port", type=int, default=8000)
-    args = parser.parse_args()
-
-    uvicorn_config = uvicorn.Config(
-        weather_mcp.streamable_http_app(), host=args.host, port=args.port
-    )
-    server = uvicorn.Server(uvicorn_config)
-    await server.serve()
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
 ```
 为了方便后续调试，这里给出了一个简单的MCP Client的示例代码：
 ```
-# -*- coding: utf-8 -*-
-import asyncio
-import json
-import logging
-import os
-
-import httpx
-import mcp
 
 from bytedance.jeddak_trusted_mcp import trusted_mcp_client
 
-logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
-MCP_URL = os.environ.get("MCP_URL", "http://127.0.0.1:8000/mcp")
+MCP_URL = os.environ.get("MCP_URL", "http://***/mcp")
 
 
-async def run_chatbot(mcp_session: mcp.ClientSession) -> None:
+async def client_func(mcp_session: mcp.ClientSession) -> None:
     """Main chat session handler."""
     tools = (await mcp_session.list_tools()).tools
 
     pass
     
-async def main() -> None:
-    """Initialize and run the chat session."""
-    async with trusted_mcp_client(MCP_URL) as mcp_session:
-        logging.info("Client initialized")
 
-        await mcp_session.initialize()
-        logging.info("MCP session initialized")
-
-        await run_chatbot(mcp_session)
-        logging.info("Exiting")
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
 ```
 # 3. Trusted MCP服务运行
 一个典型MCP应用主要包含三个模块，即Host、Client和Server，Host收到用户请求后，会请求LLM解析用户请求，并将其转化为结构化的工具调用输入，然后传输给Client。接下来，Client依据 Trusted MCP 协议，将密文参数传输给Server，得到对应的密文结果。随后，Client 会解密并把明文结果返回给用户。
