@@ -4,10 +4,10 @@
 import asyncio
 import uvicorn
 
-from bytedance.jeddak_trusted_mcp import TrustedMcp
+from bytedance.jeddak_trusted_mcp import TrustedMCP
 
 
-weather_mcp = TrustedMcp(name="Weather service")
+weather_mcp = TrustedMCP(name="Weather service")
 
 
 @weather_mcp.tool()

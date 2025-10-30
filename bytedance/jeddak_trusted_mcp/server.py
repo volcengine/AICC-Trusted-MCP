@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 __all__ = [
-    "TrustedMcp",
+    "TrustedMCP",
     "TrustedSessionManager",
 ]
 
@@ -185,7 +185,7 @@ class TrustedSessionManager(StreamableHTTPSessionManager):
         await super().handle_request(scope, new_receive, new_send)
 
 
-class TrustedMcp(FastMCP):
+class TrustedMCP(FastMCP):
     def __init__(self, aicc_config_path: str | os.PathLike = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
