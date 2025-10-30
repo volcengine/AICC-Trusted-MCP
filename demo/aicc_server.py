@@ -6,11 +6,11 @@ import asyncio
 import uvicorn
 from pathlib import Path
 
-from bytedance.jeddak_trusted_mcp import TrustedMcp
+from bytedance.jeddak_trusted_mcp import TrustedMCP
 
 
 aicc_config_path = Path(__file__).parent / "server_config.json"
-weather_mcp = TrustedMcp(name="Weather service", aicc_config_path=aicc_config_path)
+weather_mcp = TrustedMCP(name="Weather service", aicc_config_path=aicc_config_path)
 
 
 @weather_mcp.tool()
