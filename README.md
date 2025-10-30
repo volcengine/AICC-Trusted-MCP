@@ -8,7 +8,7 @@ Trusted MCP是火山引擎推出的可信MCP，在[标准MCP协议](https://mode
   <img src="./docs/trusted_mcp.png" width="500">
 </p>
 
-## QuickStart
+## 快速开始
 
 推荐使用 [uv](https://docs.astral.sh/uv/getting-started/installation/#installing-uv) 进行Python项目管理。
 
@@ -48,7 +48,7 @@ Trusted MCP是火山引擎推出的可信MCP，在[标准MCP协议](https://mode
 
 > 推荐：开发调试以及功能验证可在普通环境下部署更方便，生产环境下建议部署到机密计算环境以提供最完备的安全保障。
 
-### 普通环境部署
+### 部署到普通环境
 
 以本地部署demo目录下的[server.py](./demo/server.py)和[client.py](./demo/local_client.py)为例，展示如何在普通环境中部署Trusted MCP服务。
 
@@ -83,7 +83,7 @@ Trusted MCP是火山引擎推出的可信MCP，在[标准MCP协议](https://mode
 
 完成以上步骤后，即可在普通环境中运行Trusted MCP服务，可在Client中输入任意请求（如查询北京天气）。
 
-### 机密计算环境部署
+### 部署到机密计算环境
 
 以在火山引擎AICC机密计算平台部署demo目录下的[aicc_server.py](./demo/aicc_server.py)和[aicc_client.py](./demo/aicc_client.py)为例，展示如何在机密计算环境中部署Trusted MCP服务。
 
@@ -117,5 +117,3 @@ Trusted MCP是火山引擎推出的可信MCP，在[标准MCP协议](https://mode
 
 ## 致谢
    感谢[火山引擎AICC](https://www.volcengine.com/docs/85010/1408106?lang=zh)项目组成员，倘若没有项目组成员的努力，该项目无法实现开源发布。期望本项目能够在AI智能体隐私保护领域，特别是在涉及用户数据安全的场景中，贡献一份力量。
-## 许可证
-   MIT。
