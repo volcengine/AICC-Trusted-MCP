@@ -2,21 +2,6 @@
    Trusted MCP是火山引擎推出的可信MCP解决方案，它在MCP协议的基础上，为MCP的核心组件提供了身份证明及验证能力，并提供了端到端的通信加密解决方案，确保MCP核心组件身份可信及通信安全，解决了MCP应用中存在的服务身份不可信、数据被篡改、流量劫持、数据隐私泄露等安全威胁。
 ## 1.1 Trusted MCP协议及与MCP协议的关系
    Trusted MCP对MCP做了扩展，主要是在MCP协议的能力协商阶段，MCP Client和MCP Server会彼此判断对方是否部署在TEE中，并会对对方的远程证明报告进行验证，如果条件满足，会在jsonrpc中标记是否具有可信能力，在Client和Server后续的通信流程中，会根据该标记确定要不要启动通信加密功能。
-### Trusted MCP能力协商后的jsonrpc内容如下：
-```
-> 2025/08/14 22:17:03.000415587  length=216 from=231 to=446
-{"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{"experimental":{"trustProtocol":{"name":"AICC","version":"0.1"}}},"clientInfo":{"name":"mcp","version":"0.1.0"}},"jsonrpc":"2.0","id":0}< 2025/08/14 22:17:03.000425236  length=270 from=0 to=269
-HTTP/1.1 200 OK\r
-date: Thu, 14 Aug 2025 14:17:03 GMT\r
-server: uvicorn\r
-cache-control: no-cache, no-transform\r
-connection: keep-alive\r
-content-type: text/event-stream\r
-mcp-session-id: f68f8fa34dc54c3cb7f3c1db87b7e5a0\r
-x-accel-buffering: no\r
-Transfer-Encoding: chunked\r
-\r
-```
 ## 1.2 Trusted MCP协议详情
 
 <img src="./docs/trusted_mcp.png" width="500">
@@ -39,19 +24,16 @@ pip install bytedance_jeddak_trusted_mcp-${version}-py3-none-any.whl
 ## 2.2 使用SDK接入Trusted MCP
 让MCP服务支持Trusted MCP协议非常简单，仅需要使用TrustedMcp代替FastMCP，并准备TEE相关的配置即可，其余只需要按照MCP的开发指引进行开发即可，如下所示是获取天气的MCP Server的示例：
 ```
-# Copyright (c) 2025 Beijing Volcano Engine Technology Co., Ltd. and/or its affiliates
-# SPDX-License-Identifier: MIT
-
 import asyncio
 import uvicorn
 
 from bytedance.jeddak_trusted_mcp import TrustedMcp
 
 
-weather_mcp = TrustedMcp(name="Weather service")
+demo_mcp = TrustedMcp(name="demo")
 
 
-@weather_mcp.tool()
+@demo_mcp.tool()
 def get_weather(city: str) -> dict:
     """Get current weather for a city (e.g. "beijing")."""
     import httpx
@@ -83,9 +65,6 @@ if __name__ == "__main__":
 ```
 为了方便后续调试，这里给出了一个简单的MCP Client的示例代码：
 ```
-# Copyright (c) 2025 Beijing Volcano Engine Technology Co., Ltd. and/or its affiliates
-# SPDX-License-Identifier: MIT
-
 # -*- coding: utf-8 -*-
 import asyncio
 import json
@@ -140,7 +119,7 @@ openssl rsa -pubout -in ./myPrivateKey.pem -out ./myPublicKey.pem
 python server.py
 ```
 
-启动Host以及Client（以https://github.com/volcengine/AICC-Trusted-MCP/blob/main/demo/local_client.py为例）
+启动Host以及Client（以[./demo/local_client.py](https://github.com/volcengine/AICC-Trusted-MCP/blob/main/demo/local_client.py)为例）
 ```
 python local_client.py
 # 注：运行前需要配置Server以及方舟模型信息等相关环境变量
