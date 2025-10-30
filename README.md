@@ -1,4 +1,12 @@
-<p align="center"><strong>Trusted Model Context Protocol (Trusted MCP)</strong></p>
+<div align="center">
+
+<strong>Trusted Model Context Protocol (Trusted MCP)</strong>
+
+<!-- [![PyPI version](https://badge.fury.io/py/bytedance-jeddak-trusted-mcp.svg)](https://badge.fury.io/py/bytedance-jeddak-trusted-mcp)   -->
+<!-- [![Python versions](https://img.shields.io/pypi/pyversions/bytedance-jeddak-trusted-mcp)](https://pypi.org/project/bytedance-jeddak-trusted-mcp/)   -->
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)  [![Python min version](https://img.shields.io/badge/python-%3E%3D%203.11-blue.svg)](https://www.python.org/downloads/release/python-3110/)  [![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](./README.md)  [![Protocol](https://img.shields.io/badge/protocol-MCP-blue)](https://modelcontextprotocol.io/)
+
+</div>
 
 ## 什么是Trusted MCP？
 
