@@ -114,12 +114,12 @@ Trusted MCP服务运行最佳实践是将各模块，包括大模型服务都运
 openssl genrsa -out ./myPrivateKey.pem 4096
 openssl rsa -pubout -in ./myPrivateKey.pem -out ./myPublicKey.pem
 ```
-启动Server（以https://github.com/volcengine/AICC-Trusted-MCP/blob/main/demo/server.py为例）
+启动Server（参考[./demo/server.py](https://github.com/volcengine/AICC-Trusted-MCP/blob/main/demo/server.py)）
 ```
 python server.py
 ```
 
-启动Host以及Client（以[./demo/local_client.py](https://github.com/volcengine/AICC-Trusted-MCP/blob/main/demo/local_client.py)为例）
+启动Host以及Client（参考[./demo/local_client.py](https://github.com/volcengine/AICC-Trusted-MCP/blob/main/demo/local_client.py)）
 ```
 python local_client.py
 # 注：运行前需要配置Server以及方舟模型信息等相关环境变量
@@ -152,8 +152,10 @@ MCP Server运行配置
    "refresh_interval": 3600
 }
 ```
-### 2. 准备Client和Server，参考[./demo/aicc_client.py](https://github.com/volcengine/AICC-Trusted-MCP/blob/main/demo/aicc_client.py) 及 [./demo/aicc_server.py](https://github.com/volcengine/AICC-Trusted-MCP/blob/main/demo/aicc_server.py)
-### 3. 在TEE环境中部署Client和Server，详见[火山引擎AICC](https://www.volcengine.com/docs/85010/1408106?lang=zh)
+### 2. 准备Client和Server
+参考[./demo/aicc_client.py](https://github.com/volcengine/AICC-Trusted-MCP/blob/main/demo/aicc_client.py) 及 [./demo/aicc_server.py](https://github.com/volcengine/AICC-Trusted-MCP/blob/main/demo/aicc_server.py)
+### 3. 在TEE环境中部署Client和Server
+详见[火山引擎AICC](https://www.volcengine.com/docs/85010/1408106?lang=zh)
 ### 4. 启动Server和Client
 ```
 python ./demo/aicc_server.py
