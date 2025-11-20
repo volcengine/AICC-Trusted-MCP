@@ -5,7 +5,8 @@ __all__ = [
     "TrustedMCP",
     "TrustedSessionManager",
     "trusted_mcp_client",
+    "trusted_mcp_client_context",
 ]
 
-from .client import trusted_mcp_client
+from .client import trusted_mcp_client, trusted_mcp_client_context
 from .server import TrustedMCP, TrustedSessionManager
