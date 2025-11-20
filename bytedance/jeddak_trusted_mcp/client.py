@@ -235,4 +235,5 @@ async def trusted_mcp_client(
         httpx_client_factory=_create_trusted_http_client(jsc_client),
     ) as (recv_stream, send_stream, _id_callback):
         async with ClientSession(recv_stream, send_stream) as mcp_session:
+            await mcp_session.initialize()
             yield mcp_session
