@@ -11,7 +11,8 @@ from dataclasses import dataclass
 from datetime import timedelta
 
 from bytedance.jeddak_secure_channel.consts import ClientConst
-from typing import TYPE_CHECKING, Optional, Self
+from typing import TYPE_CHECKING, Optional
+from typing_extensions import Self
 
 if TYPE_CHECKING:
     from _typeshed import GenericPath
