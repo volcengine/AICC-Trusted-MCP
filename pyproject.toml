@@ -1,7 +1,7 @@
 [project]
 name = "trustedmcp"
 dynamic = ["version"]
-requires-python = ">= 3.11, <4.0"
+requires-python = ">= 3.10, <4.0"
 readme = "README.md"
 license = { text = "MIT" }
 description = "Jeddak Trusted Model Context Protocol SDK."

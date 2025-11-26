@@ -19,7 +19,8 @@ from dataclasses import dataclass
 from io import BytesIO
 
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from typing import IO, Literal, Optional, Self, Tuple
+from typing import IO, Literal, Optional, Tuple
+from typing_extensions import Self
 
 from .. import error
 
