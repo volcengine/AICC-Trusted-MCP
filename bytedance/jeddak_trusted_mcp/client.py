@@ -225,9 +225,16 @@ def _create_trusted_http_client(jsc_client: jsc.Client | None) -> McpHttpClientF
 
 @asynccontextmanager
 async def trusted_mcp_client(
-    url: str, aicc_config_path: str | os.PathLike = None
+    url: str,
+    headers: dict[str, str] | None = None,
+    timeout: float | timedelta = 30,
+    sse_read_timeout: float | timedelta = 60 * 5,
+    terminate_on_close: bool = True,
+    auth: httpx.Auth | None = None,
 ) -> AsyncGenerator[ClientSession, None]:
     jsc_client = None
+    filtered_headers = headers.copy() if headers else None
+    aicc_config_path = filtered_headers.pop("aicc-config", None) if filtered_headers else None
     if aicc_config_path:
         jsc_config = jsc.ClientConfig.from_file(aicc_config_path)
     else:
@@ -240,8 +247,13 @@ async def trusted_mcp_client(
 
     try:
         async with streamablehttp_client(
-            url,
+            url=url,
+            headers=filtered_headers,
+            timeout=timeout,
+            sse_read_timeout=sse_read_timeout,
+            terminate_on_close=terminate_on_close,
             httpx_client_factory=_create_trusted_http_client(jsc_client),
+            auth=auth,
         ) as (recv_stream, send_stream, _id_callback):
             async with ClientSession(recv_stream, send_stream) as mcp_session:
                 await mcp_session.initialize()
@@ -269,8 +281,9 @@ async def trusted_mcp_client_context(
     ],
     None,
 ]:
-    aicc_config_path = headers.get("aicc-config", None)
     jsc_client = None
+    filtered_headers = headers.copy() if headers else None
+    aicc_config_path = filtered_headers.pop("aicc-config", None) if filtered_headers else None
     if aicc_config_path:
         jsc_config = jsc.ClientConfig.from_file(aicc_config_path)
     else:
@@ -283,7 +296,7 @@ async def trusted_mcp_client_context(
 
     async with streamablehttp_client(
         url=url,
-        headers=headers,
+        headers=filtered_headers,
         timeout=timeout,
         sse_read_timeout=sse_read_timeout,
         terminate_on_close=terminate_on_close,
