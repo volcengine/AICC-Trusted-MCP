@@ -2,5 +2,10 @@
   "ra_service_name": "mcp_server_demo",
   "ra_policy_id": "policy_id",
   "ra_uid": "2102299836",
-  "bytedance_top_info": "{\"url\": \"open.volcengineapi.com\", \"ak\": \"**\", \"sk\": \"**==\", \"service\": \"pcc_test\"}"
+  "bytedance_top_info": {
+    "url": "open.volcengineapi.com",
+    "ak": "**",
+    "sk": "**==",
+    "service": "pcc_test"
+  }
 }
