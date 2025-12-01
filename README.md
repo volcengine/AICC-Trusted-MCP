@@ -1,10 +1,11 @@
 <div align="center">
 
 <strong>Trusted Model Context Protocol (Trusted MCP)</strong>
+<!-- [![Python versions](https://img.shields.io/pypi/pyversions/trustedmcp)](https://pypi.org/project/trustedmcp/)    -->
+<!-- [![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](./README.md) -->
 
-<!-- [![PyPI version](https://badge.fury.io/py/bytedance-jeddak-trusted-mcp.svg)](https://badge.fury.io/py/bytedance-jeddak-trusted-mcp)   -->
-<!-- [![Python versions](https://img.shields.io/pypi/pyversions/bytedance-jeddak-trusted-mcp)](https://pypi.org/project/bytedance-jeddak-trusted-mcp/)   -->
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)  [![Python min version](https://img.shields.io/badge/python-%3E%3D%203.11-blue.svg)](https://www.python.org/downloads/release/python-3110/)  [![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](./README.md)  [![Protocol](https://img.shields.io/badge/protocol-MCP-blue)](https://modelcontextprotocol.io/)
+[![PyPI version](https://badge.fury.io/py/trustedmcp.svg)](https://pypi.org/project/trustedmcp/)  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)  [![Python min version](https://img.shields.io/badge/python-%3E%3D%203.10-blue.svg)](https://www.python.org/downloads/release/python-310/)  [![Protocol](https://img.shields.io/badge/protocol-MCP-blue)](https://modelcontextprotocol.io/)
+
 
 </div>
 
@@ -16,37 +17,34 @@ Trusted MCP是火山引擎推出的可信MCP，在[标准MCP协议](https://mode
   <img src="./docs/trusted_mcp.png" width="500">
 </p>
 
+## 安装
+
+推荐使用 [uv](https://docs.astral.sh/uv/getting-started/installation/#installing-uv) 进行Python项目管理（支持Python 3.11及以上版本）。
+
+```bash
+uv add trustedmcp
+```
+或者，对于使用 pip 管理依赖的项目：
+
+```bash
+pip install trustedmcp
+```
+
 ## 快速开始
 
-推荐使用 [uv](https://docs.astral.sh/uv/getting-started/installation/#installing-uv) 进行Python项目管理。
+在代码中引入TrustedMCP，仅需要将现有MCP模块替换成TrustedMCP模块即可。如下代码展示：
 
-1. 编译SDK
-    ```bash
-    uv build
-    # 编译完成后，会在dist目录下生成whl文件以及tar.gz文件
-    ```
+```python
+# Original MCP code
+# Import MCP, and create an MCP server
+from mcp.server.fastmcp import FastMCP
+mcp = FastMCP(name="Demo")
 
-2. 安装SDK
-    ```bash
-    uv add bytedance_jeddak_trusted_mcp
-    ```
-    > 在本项目中使用可直接通过`uv sync`完成编译和安装。
-
-
-3. 使用SDK
-    ```python
-    # 如下代码展示了如何在代码中引入TrustedMCP，仅需要将现有MCP模块替换成TrustedMCP模块即可。
-
-    # Original MCP code
-    # Import MCP, and create an MCP server
-    from mcp.server.fastmcp import FastMCP
-    mcp = FastMCP(name="Demo")
-
-    # Replace with TrustedMCP code
-    # Import TrustedMCP, and create a TrustedMCP server
-    from bytedance.jeddak_trusted_mcp import TrustedMCP
-    trusted_mcp = TrustedMCP(name="Demo")
-    ```
+# Replace with TrustedMCP code
+# Import TrustedMCP, and create a TrustedMCP server
+from bytedance.jeddak_trusted_mcp import TrustedMCP
+trusted_mcp = TrustedMCP(name="Demo")
+```
 
 注意：实际代码运行还需要提供TrustedMCP以及大模型调用的必要配置。
 

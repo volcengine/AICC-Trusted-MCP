@@ -21,7 +21,8 @@ from datetime import datetime, timezone
 from io import BytesIO
 from threading import Lock
 
-from typing import IO, TYPE_CHECKING, Optional, Self, Set, Tuple, Union
+from typing import IO, TYPE_CHECKING, Optional, Set, Tuple, Union
+from typing_extensions import Self
 
 if TYPE_CHECKING:
     from _typeshed import GenericPath

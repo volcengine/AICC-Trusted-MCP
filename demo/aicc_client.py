@@ -185,9 +185,12 @@ async def main() -> int | None:
         )
         return 1
 
-    aicc_config_path = Path(__file__).parent / "client_config.json"
+    aicc_config_path = str(Path(__file__).parent / "client_config.json")
+    headers = {
+        "aicc-config": aicc_config_path,
+    }
 
-    async with trusted_mcp_client(MCP_URL, aicc_config_path) as mcp_session:
+    async with trusted_mcp_client(MCP_URL, headers=headers) as mcp_session:
         logging.info("Client initialized")
 
         await mcp_session.initialize()

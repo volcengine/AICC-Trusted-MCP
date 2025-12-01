@@ -1,6 +1,9 @@
 {
   "tks_url": "***",
   "tks_app_id": "2100xxxxxx",
-  "bytedance_top_info": "{\"ak\": \"***\", \"sk\": \"***\"}",
+  "bytedance_top_info": {
+    "ak": "***",
+    "sk": "***"
+  },
   "refresh_interval": 3600
 }

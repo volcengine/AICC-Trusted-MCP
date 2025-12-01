@@ -5,16 +5,19 @@ __all__ = [
     "trusted_mcp_client",
 ]
 
+from datetime import timedelta
 import json
 import logging
 import os
 from collections.abc import AsyncGenerator, AsyncIterator
 from contextlib import asynccontextmanager
 
+from anyio.streams.memory import MemoryObjectReceiveStream, MemoryObjectSendStream
 import httpx
 from mcp import ClientSession
-from mcp.client.streamable_http import streamablehttp_client
+from mcp.client.streamable_http import GetSessionIdCallback, streamablehttp_client
 from mcp.shared._httpx_utils import McpHttpClientFactory
+from mcp.shared.message import SessionMessage
 from typing_extensions import override
 
 import bytedance.jeddak_secure_channel as jsc
@@ -118,7 +121,7 @@ class AsyncTrustedTransport(httpx.AsyncHTTPTransport):
 
         resp = await super().handle_async_request(req)
 
-        await self._handle_initialize_response(resp)
+        self.server_support = True
 
         return resp
 
@@ -129,17 +132,23 @@ class AsyncTrustedTransport(httpx.AsyncHTTPTransport):
             if content_type.startswith("application/json"):
                 body = await resp.aread()
                 body_obj = json.loads(body)
+                resp._content = body
+                resp.stream = httpx.ByteStream(resp._content)
 
             elif content_type.startswith("text/event-stream"):
                 body = await resp.aread()
+                parsed_result = None
                 for line in body.split(b"\r\n"):
                     if line.startswith(b"data:"):
                         data = line.removeprefix(b"data:").removeprefix(b" ")
-                        body_obj = json.loads(data).get("result", {})
+                        parsed_result = json.loads(data).get("result", {})
                         break
-                else:
+                if parsed_result is None:
                     logger.warning("No data in initialize response")
                     return
+                body_obj = {"result": parsed_result}
+                resp._content = body
+                resp.stream = httpx.ByteStream(resp._content)
 
             else:
                 logger.warning(f"Cannot handle initialize response {content_type}")
@@ -216,23 +225,86 @@ def _create_trusted_http_client(jsc_client: jsc.Client | None) -> McpHttpClientF
 
 @asynccontextmanager
 async def trusted_mcp_client(
-    url: str, aicc_config_path: str | os.PathLike = None
+    url: str,
+    headers: dict[str, str] | None = None,
+    timeout: float | timedelta = 30,
+    sse_read_timeout: float | timedelta = 60 * 5,
+    terminate_on_close: bool = True,
+    auth: httpx.Auth | None = None,
 ) -> AsyncGenerator[ClientSession, None]:
     jsc_client = None
+    filtered_headers = headers.copy() if headers else None
+    aicc_config_path = filtered_headers.pop("aicc-config", None) if filtered_headers else None
     if aicc_config_path:
         jsc_config = jsc.ClientConfig.from_file(aicc_config_path)
     else:
         jsc_config = jsc.ClientConfig.from_dict({"pub_key_path": "./myPublicKey.pem"})
 
     try:
+        jsc_client = jsc.Client(jsc_config)
+    except Exception:
+        logger.exception("Create AICC client")
 
+    try:
+        async with streamablehttp_client(
+            url=url,
+            headers=filtered_headers,
+            timeout=timeout,
+            sse_read_timeout=sse_read_timeout,
+            terminate_on_close=terminate_on_close,
+            httpx_client_factory=_create_trusted_http_client(jsc_client),
+            auth=auth,
+        ) as (recv_stream, send_stream, _id_callback):
+            async with ClientSession(recv_stream, send_stream) as mcp_session:
+                await mcp_session.initialize()
+                yield mcp_session
+    except RuntimeError as e:
+        if 'asynchronous generator is already running' in str(e):
+            logger.debug('Suppress generator closing race: %s', e)
+        else:
+            raise
+
+
+@asynccontextmanager
+async def trusted_mcp_client_context(
+    url: str,
+    headers: dict[str, str] | None = None,
+    timeout: float | timedelta = 30,
+    sse_read_timeout: float | timedelta = 60 * 5,
+    terminate_on_close: bool = True,
+    auth: httpx.Auth | None = None,
+) -> AsyncGenerator[
+    tuple[
+        MemoryObjectReceiveStream[SessionMessage | Exception],
+        MemoryObjectSendStream[SessionMessage],
+        GetSessionIdCallback,
+    ],
+    None,
+]:
+    jsc_client = None
+    filtered_headers = headers.copy() if headers else None
+    aicc_config_path = filtered_headers.pop("aicc-config", None) if filtered_headers else None
+    if aicc_config_path:
+        jsc_config = jsc.ClientConfig.from_file(aicc_config_path)
+    else:
+        jsc_config = jsc.ClientConfig.from_dict({"pub_key_path": "./myPublicKey.pem"})
+
+    try:
         jsc_client = jsc.Client(jsc_config)
     except Exception:
         logger.exception("Create AICC client")
 
     async with streamablehttp_client(
-        url,
+        url=url,
+        headers=filtered_headers,
+        timeout=timeout,
+        sse_read_timeout=sse_read_timeout,
+        terminate_on_close=terminate_on_close,
         httpx_client_factory=_create_trusted_http_client(jsc_client),
-    ) as (recv_stream, send_stream, _id_callback):
-        async with ClientSession(recv_stream, send_stream) as mcp_session:
-            yield mcp_session
+        auth=auth,
+    ) as (recv_stream, send_stream, id_callback):
+        yield (
+            recv_stream,
+            send_stream,
+            id_callback,
+        )
