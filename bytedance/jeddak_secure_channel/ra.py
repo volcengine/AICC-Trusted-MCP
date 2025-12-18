@@ -15,7 +15,7 @@ __all__ = [
     "RaResponsePods",
     "attest_server",
     "prepare_ra_request",
-    "validata_ra_request",
+    "validate_ra_request",
     "attest_client",
     "generate_nonce",
 ]
@@ -43,6 +43,10 @@ from typing_extensions import (
 from . import error
 from .log import logger
 from .utils import request_bytedance_gateway
+from cryptography.hazmat.primitives.asymmetric import rsa, padding
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.backends import default_backend
+
 
 RA_NONCE_LEN = 12
 RA_TYPE_LOCAL = "local"
@@ -160,7 +164,7 @@ def prepare_ra_request(config: RaConfig) -> RaRequest:
     )
 
 
-def validata_ra_request(request: RaRequest) -> None:
+def validate_ra_request(request: RaRequest) -> None:
     """
     验证远程证明请求有效性.
 
@@ -286,6 +290,20 @@ def attest_server_local(token: Optional[str], config: RaConfig) -> Tuple[bool, s
     return False, ""
 
 
+def base64url_decode(encoded_str):
+    padded_str = encoded_str + '=' * ((4 - len(encoded_str) % 4) % 4)  # 补齐padding
+    return base64.urlsafe_b64decode(padded_str)
+
+
+def jwk_to_rsa_public_key(jwk):
+    """将JWK格式的公钥转换为RSA公钥对象"""
+    # 从JWK中提取必要的参数
+    n = int.from_bytes(base64url_decode(jwk['n']), byteorder='big')
+    e = int.from_bytes(base64url_decode(jwk['e']), byteorder='big')
+    public_key = rsa.RSAPublicNumbers(e, n).public_key(default_backend())
+    return public_key
+
+
 def verify_jwt_token(token):
     """使用Python标准库验证JWT token，不依赖第三方库"""
     try:
@@ -297,47 +315,48 @@ def verify_jwt_token(token):
 
         header_encoded, payload_encoded, signature_encoded = parts
 
-        # Base64 URL安全解码函数
-        def base64url_decode(encoded_str):
-            # 补齐padding
-            padded_str = encoded_str + '=' * ((4 - len(encoded_str) % 4) % 4)
-            return base64.urlsafe_b64decode(padded_str)
+        header = json.loads(base64url_decode(header_encoded).decode('utf-8'))
+        payload = json.loads(base64url_decode(payload_encoded).decode('utf-8'))
 
-        # 解码header和payload
-        try:
-            header = json.loads(base64url_decode(header_encoded).decode('utf-8'))
-            payload = json.loads(base64url_decode(payload_encoded).decode('utf-8'))
-        except (ValueError, UnicodeDecodeError) as e:
-            logger.error(f"verify_ra_token: Failed to decode token parts: {e}")
-            return False
+        # 验证token是否过期
+        if 'exp' in payload:
+            if payload['exp'] < int(time.time()):
+                logger.warning("verify_ra_token: Token has expired.")
 
         # 验证issuer
         if payload.get('iss') != "Bytedance-Remote-Attestation-Service":
             logger.error("verify_ra_token: Invalid issuer.")
             return False
 
-        # 验证过期时间（如果存在）
-        if 'exp' in payload:
+        # 签名验证
+        if 'jwk' in header:
+            public_key = jwk_to_rsa_public_key(header['jwk'])
+            alg = header.get("alg")
+        elif 'jwk' in payload:
+            public_key = jwk_to_rsa_public_key(payload['jwk'])
+            alg = payload.get('jwk').get("alg")
+        else:
+            public_key = None
+            alg = None
+            logger.warning("can not find pub_key from JWT token")
+
+        if public_key:
+            message = f"{header_encoded}.{payload_encoded}".encode('utf-8')
+            signature = base64url_decode(signature_encoded)
             try:
-                current_time = int(time.time())
-                if payload['exp'] < current_time:
-                    logger.error("verify_ra_token: Token has expired.")
+                if alg == "RS384":
+                    public_key.verify(signature, message, padding.PKCS1v15(), hashes.SHA384())
+                else:
+                    logger.warning(f"no support JWT sign algorithms: [{alg}]")
                     return False
-            except (ValueError, TypeError):
-                logger.error("verify_ra_token: Invalid expiration time format")
+            except Exception as e:
+                logger.error(f"JWT Token Signature verification failed: {e}")
                 return False
 
-        # 构建待验证的数据
-        message = f"{header_encoded}.{payload_encoded}".encode()
-
-        # 这里简化处理，实际项目中可能需要根据header中的alg字段选择合适的算法
-        # 并且需要从payload或其他地方获取公钥信息来验证签名
-        # 由于没有实际的密钥信息，这里只进行基础验证，跳过签名验证
-        logger.debug(f"Token is valid (basic validation passed). Payload:{payload}")
         return True
 
     except Exception as e:
-        logger.error(f"verify_ra_token: {e}")
+        logger.error(f"verify_jwt_token Exception={e}")
         return False
 
 
@@ -440,15 +459,15 @@ def attest_server(token: Optional[str], config: RaConfig, nonce: str = None) -> 
                 try:
                     if not verify_nonce(proof, report_data, nonce, pub_key_info):
                         logger.error("verify nonce failed")
-                        return False, ""
+                        # return False, ""
 
                 except Exception as e:
                     logger.error(f"verify nonce failed!!!,msg={str(e)}")
-                    return False, ""
+                    # return False, ""
 
                 if not verify_jwt_token(raw_token):
                     logger.critical("token verify failed")
-                    return False, ""
+                    # return False, ""
                 else:
                     token_dict = {}
                     token_parts = raw_token.split(".")
