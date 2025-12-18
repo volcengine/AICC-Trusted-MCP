@@ -15,7 +15,7 @@ from bytedance.jeddak_secure_channel.ra import (
     RA_TYPE_TCA,
     generate_nonce,
     prepare_ra_request,
-    validata_ra_request,
+    validate_ra_request,
     attest_server,
     attest_client,
     verify_nonce,
@@ -95,26 +95,26 @@ def test_prepare_ra_request():
     assert request["attested_pods"] == [{"cluster_id": "test", "namespace": "test", "deployment": "test"}]
 
 
-def test_validata_ra_request_valid():
+def test_validate_ra_request_valid():
     """测试验证有效的远程证明请求"""
     # 创建一个有效的请求
     request = {}
     # 不包含nonce的请求也是有效的
-    validata_ra_request(request)
+    validate_ra_request(request)
 
     # 包含有效nonce的请求
     valid_nonce = base64.b64encode(b'\x00' * RA_NONCE_LEN).decode('utf-8')
     request = {"hex_runtime_data": valid_nonce}
-    validata_ra_request(request)
+    validate_ra_request(request)
 
 
-def test_validata_ra_request_invalid_nonce():
+def test_validate_ra_request_invalid_nonce():
     """测试验证无效nonce的远程证明请求"""
     # 创建一个无效nonce的请求
     invalid_nonce = base64.b64encode(b'\x00' * (RA_NONCE_LEN + 1)).decode('utf-8')
     request = {"hex_runtime_data": invalid_nonce}
     with pytest.raises(error.ParamError) as excinfo:
-        validata_ra_request(request)
+        validate_ra_request(request)
     assert excinfo.value.param == "nonce"
 
 

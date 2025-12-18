@@ -41,7 +41,7 @@ from .ra import (
     RaResponsePod,
     RaResponsePods,
     attest_client,
-    validata_ra_request,
+    validate_ra_request,
 )
 from .utils import RepeatTimer, request_bytedance_gateway, weak_repeat_timer
 
@@ -418,7 +418,7 @@ class Server:
             KeyMissingError: 没有可用的密钥. 应通过 `load_tks_key`, `load_key`, 或
                 `generate_key` 添加密钥.
         """
-        validata_ra_request(request)
+        validate_ra_request(request)
 
         res_meta_data = RaResponseMetadata(Code=0, Message="success")
         res_result: RaResponsePods = {
