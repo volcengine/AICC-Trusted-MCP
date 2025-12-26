@@ -29,11 +29,11 @@ classifiers = [
   "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
-    "cryptography >= 38.0.0, < 100",
-    "requests >= 2.22, < 100",
+    "cryptography >= 38.0.0",
+    "requests >= 2.22",
     "typing_extensions ~= 4.12",
     "loguru ~= 0.7.3",
-    "volcengine-python-sdk >= 4.0.4, <= 5",
+    "volcengine-python-sdk >= 4.0.4",
     "mcp",
     "uvicorn",
 ]
