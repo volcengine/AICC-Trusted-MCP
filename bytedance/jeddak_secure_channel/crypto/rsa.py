@@ -12,7 +12,8 @@ from dataclasses import dataclass
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey, RSAPublicKey
-from typing import Self, Union
+from typing import Union
+from typing_extensions import Self
 
 from .. import error
 

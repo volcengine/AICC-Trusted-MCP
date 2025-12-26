@@ -1,44 +1,57 @@
 [project]
-name = "bytedance.jeddak_trusted_mcp"
-version = "0.0.1"
-requires-python = ">= 3.11, <4.0"
-description = "Secure communication for Jeddak Trusted MCP"
-authors = [
+name = "trustedmcp"
+dynamic = ["version"]
+requires-python = ">= 3.10, <4.0"
+readme = "README.md"
+license = { text = "MIT" }
+description = "Jeddak Trusted Model Context Protocol SDK."
+authors = [{ name = "Jeddak AICC" }]
+maintainers = [
   { name = "bytedance", email = "sunyong.ty@bytedance.com" },
+  { name = "bytedance", email = "huorong@bytedance.com" },
+]
+keywords = [
+    "mcp",
+    "mcp server",
+    "mcp client",
+    "model context protocol",
+    "trusted mcp",
+    "llm",
+    "agent",
 ]
 classifiers = [
   "Development Status :: 3 - Alpha",
-  "License :: Other/Proprietary License",
+  "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
   "Programming Language :: Python :: 3",
   "Topic :: Security",
   "Topic :: Security :: Cryptography",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
-    "cryptography >= 38.0.0, < 100",
-    "requests >= 2.22, < 100",
+    "cryptography >= 38.0.0",
+    "requests >= 2.22",
     "typing_extensions ~= 4.12",
     "loguru ~= 0.7.3",
-    "volcengine-python-sdk >= 4.0.4, <= 5",
+    "volcengine-python-sdk >= 4.0.4",
     "mcp",
     "uvicorn",
 ]
-
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
-[tool.hatch.build.targets.wheel]
-include = [
-  "/bytedance",
-]
-
 [project.optional-dependencies]
 test = [
   "coverage ~= 7.6",
   "pytest ~= 8.3",
   "pytest-mock ~= 3.14",
   "responses ~= 0.25",
+]
+
+[project.urls]
+Repository = "https://github.com/volcengine/AICC-Trusted-MCP"
+Issues = "https://github.com/volcengine/AICC-Trusted-MCP/issues"
+
+[tool.hatch.build.targets.wheel]
+include = [
+  "/bytedance",
 ]
 
 [tool.pytest.ini_options]
@@ -55,3 +68,15 @@ omit = [
 include = ["bytedance", "demo"]
 venvPath = "."
 venv = ".venv"
+
+[build-system]
+requires = ["hatchling", "uv-dynamic-versioning"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+[tool.uv-dynamic-versioning]
+vcs = "git"
+style = "pep440"
+bump = true
