@@ -321,7 +321,8 @@ def verify_jwt_token(token):
         # 验证token是否过期
         if 'exp' in payload:
             if payload['exp'] < int(time.time()):
-                logger.warning("verify_ra_token: Token has expired.")
+                logger.error("verify_ra_token: Token has expired.")
+                return False
 
         # 验证issuer
         if payload.get('iss') != "Bytedance-Remote-Attestation-Service":
@@ -336,9 +337,8 @@ def verify_jwt_token(token):
             public_key = jwk_to_rsa_public_key(payload['jwk'])
             alg = payload.get('jwk').get("alg")
         else:
-            public_key = None
-            alg = None
-            logger.warning("can not find pub_key from JWT token")
+            logger.error("can not find pub_key from JWT token")
+            return False
 
         if public_key:
             message = f"{header_encoded}.{payload_encoded}".encode('utf-8')
@@ -459,15 +459,15 @@ def attest_server(token: Optional[str], config: RaConfig, nonce: str = None) -> 
                 try:
                     if not verify_nonce(proof, report_data, nonce, pub_key_info):
                         logger.error("verify nonce failed")
-                        # return False, ""
+                        return False, ""
 
                 except Exception as e:
                     logger.error(f"verify nonce failed!!!,msg={str(e)}")
-                    # return False, ""
+                    return False, ""
 
                 if not verify_jwt_token(raw_token):
                     logger.critical("token verify failed")
-                    # return False, ""
+                    return False, ""
                 else:
                     token_dict = {}
                     token_parts = raw_token.split(".")
